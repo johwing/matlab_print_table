@@ -2,18 +2,21 @@ function varargout = print_table(dataCell, varargin)
 %% PRINT_TABLE Print data in a table format (text or latex)
 %
 % Syntax:
+%     PRINT_TABLE(dataTable)
 %     PRINT_TABLE(dataCell)
-%     PRINT_TABLE(dataCell, dataDescCellstr)
-%     PRINT_TABLE(dataCell, dataDescCellstr, ...
-%        headerColumnCellstr, headerRowCellstr)
+%
+%     PRINT_TABLE(__, dataDescCellstr)
+%     PRINT_TABLE(__, dataDescCellstr, headerColumnCellstr, headerRowCellstr)
 %
 %     PRINT_TABLE(__, Name, Value)
 %
 %     tableStr = PRINT_TABLE(__)
 %
 % Input:
+%     dataTable            - table data to print (see table)
 %     dataCell             - cell with data to print (can be numeric matrix)
-%     dataDescCellstr      - cell with sprintf syntax for elements in dataCell
+%
+%     dataDescCellstr      - cell with sprintf syntax for elements in data
 %                            Note, dataDesc is expanded to the complete table
 %                            size if only a single element, row or column
 %                            description is supplied. 
@@ -100,7 +103,8 @@ function varargout = print_table(dataCell, varargin)
 %   5  & 12.2 & 15.3 &  52  \\ \hline 
 % \end{tabular}
 %
-% See also fprintf, inputParser, repmat_as_needed, rmexpzeros, cellstr2str
+% See also fprintf, inputParser, table, table2cell
+% repmat_as_needed, rmexpzeros, cellstr2str
 
 %   Created by: Johan Winges
 %   $Revision: 1.0$  $Date: 2014/10/06 14:00:00$
@@ -110,11 +114,13 @@ function varargout = print_table(dataCell, varargin)
 %     Changed option input format to use inputParser object
 %   $Revision: 1.4$  $Date: 2014/10/30 15:00:00$
 %     Added textAlignment option for each column, and spaceColPadAlign option
+%   $Revision: 1.5$  $Date: 2014/10/31 11:00:00$
+%     Added support for table data type input
 
 %% Set default input and parse input:
 inpPar = inputParser;
 addRequired(inpPar,'dataCell',...
-   @(x) validateattributes(x,{'cell','numeric'},{'nonempty'}));
+   @(x) validateattributes(x,{'cell','numeric','table'},{'nonempty'}));
 addOptional(inpPar,'dataDescCellstr',{'%g'},...   
    @(x) validateattributes(x,{'cell'},{'nonempty'})); 
 % Due to bug/feature? in parse, we can not allow an optional parameter to be a
@@ -154,24 +160,48 @@ addParameter(inpPar,'borderRowStr','-',@ischar);
 parse(inpPar, dataCell, varargin{:});
 %% TODO-> bugged when not supplying optional input?!
 
-% Remake dataCell to cell if numeric:
-if ~iscell(dataCell)
-   dataCell = num2cell(dataCell);
-end
-
 % Collect some data from inpPar results:
 dataDescCellstr = inpPar.Results.dataDescCellstr;
 headerColumnCellstr = inpPar.Results.headerColumnCellstr;
 headerRowCellstr = inpPar.Results.headerRowCellstr;
 
-colSepStr = inpPar.Results.colSepStr;
-rowSepStr = inpPar.Results.rowSepStr; 
-   
 % Remake dataDescCellstr to cell if not cell
 if ~iscell(dataDescCellstr)
    dataDescCellstr = {dataDescCellstr};
 end
 
+% Check if dataCell is actually in table format:
+if istable(dataCell)
+   dataTable   = dataCell;
+   dataCell    = table2cell(dataTable);   
+   % If there is no input for headers, use variable names in table:
+   headerRowCellstr     = dataTable.Properties.RowNames;
+   headerColumnCellstr  = dataTable.Properties.VariableNames;
+   % Generate dataDescCellstr if only specified as single element and not
+   % matching the data types in the table:
+   if ~( (size(dataDescCellstr,1) == size(dataCell,1)) || ...
+         (size(dataDescCellstr,2) == size(dataCell,2)) )
+      % Find out data types:
+      dataIsNumLog   = cellfun(@(data) all(isnumeric(data)) | ...
+         all(islogical(data)), dataCell);
+      dataIsChar  = cellfun(@(data) ischar(data), dataCell);
+      if ~all(dataIsNumLog(:))
+         dataDescCellstr_init = dataDescCellstr;
+         dataDescCellstr = cell(size(dataCell));
+         dataDescCellstr(dataIsNumLog) = dataDescCellstr_init;
+         dataDescCellstr(dataIsChar)   = {'%s'};
+      end
+   end
+end   
+
+% Remake dataCell to cell if numeric:
+if isnumeric(dataCell)
+   dataCell = num2cell(dataCell);
+end
+
+colSepStr = inpPar.Results.colSepStr;
+rowSepStr = inpPar.Results.rowSepStr; 
+   
 %% Set the separation charachters to be used in the table if latex:
 if strcmp(inpPar.Results.printMode,'latex')
    colSepStr = '&';
