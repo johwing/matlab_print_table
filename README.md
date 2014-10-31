@@ -1,6 +1,11 @@
 matlab_print_table
 ==================
-Print data in a table format (text or latex)
+Print data in a compact text table format or latex tabular enviroment. 
+Can print tables from numeric matrices, cell matrices with different data types or data in the table format.
+The second (cell) input specifies the print format (using fprintf syntax), and can be specified for each row, column or for each individual element in the table.
+The table is printet with aligned columns and text alignment by inserting spaces. 
+Can also print the transposed table version of the supplied data.
+Provides a variety of cosmetic options such as adding/removing extra space padding or changing the separation characters.
 
 Syntax:
 print_table(dataTable)
@@ -49,8 +54,3 @@ borderRowStr = '-'  - border type string, should be single character
 
 Output, table printed in command window, or 
 tableStr  - string with output table, preferably printed using fprintf
-
-Comment:
-Utility function for writing a table in either text mode or latex mode. Generates a table with aligned columns by inserting spaces.
-Can also print the transposed table version of the supplied data.
-Provides a variety of options such as adding/removing extra space padding or changing the separation characters.
