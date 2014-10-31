@@ -30,19 +30,19 @@ printHeaderRow = 1  - print header rows (if supplied)
 transposeTable = 0   - transpose table compared to input format
 printMode = 'text'       - print mode, 'text' or 'latex'
 colSepStr = '|'            - separation string between columns (if 'text')
-rowSepStr = ''            - separation line characther between rows (if 'text')
-rowHSepStr = '-'        - separation line charachter between header and data
+rowSepStr = ''            - separation line character between rows (if 'text')
+rowHSepStr = '-'        - separation line character between header and data
 colHSepStr = ''           - extra separation string between col.header and data
-textAlignment  = 'c'    - text alignement in each column (alt. 'l' or 'r')
+textAlignment  = 'c'    - text alignment in each column (alt. 'l' or 'r')
   Note, is possible to supply for each column as string, e.g. 'lcl...cr'.
 numSpaceColPad = 1 - extra space padding in each column 
 spaceColPadAlign = 1 - use the extra space padding with the text alignment
   Note, cosmetic change if we do not want the extra space padding to be
   included in the aligned text, e.g. 'lText   ' -> ' lText  ', if false
 and numSpaceColPad = 1 and textAlignment = 'l'.
-printLatexFull = 1   - add tabular enviroment to latex table format
+printLatexFull = 1   - add tabular environment to latex table format
 printBorder = 0      - print simple border around the table (in text mode)   
-borderRowStr = '-' - border type string, should be single charachter
+borderRowStr = '-' - border type string, should be single character
 
 Output, table printed in command window, or 
 tableStr  - string with output table, preferably printed using fprintf
