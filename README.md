@@ -41,7 +41,7 @@ spaceColPadAlign = 1 - use the extra space padding with the text alignment
   included in the aligned text, e.g. 'lText   ' -> ' lText  ', if false
 and numSpaceColPad = 1 and textAlignment = 'l'.
 printLatexFull = 1   - add tabular enviroment to latex table format
-printBorder = 1      - print simple border around the table (in text mode)   
+printBorder = 0      - print simple border around the table (in text mode)   
 borderRowStr = '-' - border type string, should be single charachter
 
 Output, table printed in command window, or 
