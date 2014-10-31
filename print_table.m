@@ -52,7 +52,7 @@ function varargout = print_table(dataCell, varargin)
 %        included in the aligned text, e.g. 'lText   ' -> ' lText  ', if false
 %        and numSpaceColPad = 1 and textAlignment = 'l'.
 %     printLatexFull = 1   - add tabular enviroment to latex table format
-%     printBorder = 1      - print simple border around the table (in text mode)   
+%     printBorder    = 0   - print simple border around the table (in text mode)   
 %       borderRowStr = '-' - border type string, should be single charachter
 %
 % Output:
@@ -64,9 +64,43 @@ function varargout = print_table(dataCell, varargin)
 %     mode. Generates a table with aligned columns by inserting spaces.
 %     Can also print the transposed version of the supplied table data.
 %     Provides a variety of options such as adding/removing extra space padding
-%     or changing the separation characters.!
+%     or changing the separation characters.
 %
-% See also fprintf, cellstr2str, rmexpzeros, inputParser
+%     Includes three additional utility functions:
+%        repmat_as_needed  - repmat data into a specified size
+%        rmexpzeroes       - removes unecessary zeroes from exponent string
+%        cellstr2str       - concatenates cellstr with some char between parts
+%
+% Example usage:
+%  print_table(1e2.*rand(5,3),{'%.3g'},{'a','b','c'},{'No.','1','2','3','4','5'})
+%  No. |   a  |   b  |   c  
+% -----|------|------|------
+%   1  |  45  | 28.5 | 27.5 
+%   2  | 20.6 | 67.3 | 71.7 
+%   3  |  90  | 66.4 | 28.3 
+%   4  | 76.3 | 12.3 | 89.6 
+%   5  | 88.2 | 40.7 | 82.7 
+%  print_table(1e2.*rand(5,3),{'%.3g'},{'a','b','c'},{'No.','1','2','3','4','5'},'printBorder',1)
+% |-----|------|------|------|
+% | No. |   a  |   b  |   c  |
+% |-----|------|------|------|
+% |  1  |  43  | 10.9 | 22.9 |
+% |  2  | 69.4 |  39  | 83.4 |
+% |  3  | 94.5 | 59.1 | 1.56 |
+% |  4  | 78.4 | 45.9 | 86.4 |
+% |  5  | 70.6 | 5.03 | 7.81 |
+% |-----|------|------|------|
+% print_table(1e2.*rand(5,3),{'%.3g'},{'a','b','c'},{'No.','1','2','3','4','5'},'printMode','latex')
+% \begin{tabular}{|c|c|c|c|}\hline
+%  No. &   a  &   b  &   c  \\ \hline 
+%   1  & 66.9 & 67.1 & 1.96 \\ \hline 
+%   2  &  50  &  60  & 43.5 \\ \hline 
+%   3  & 21.8 &  5.6 & 83.2 \\ \hline 
+%   4  & 57.2 & 5.63 & 61.7 \\ \hline 
+%   5  & 12.2 & 15.3 &  52  \\ \hline 
+% \end{tabular}
+%
+% See also fprintf, inputParser, repmat_as_needed, rmexpzeros, cellstr2str
 
 %   Created by: Johan Winges
 %   $Revision: 1.0$  $Date: 2014/10/06 14:00:00$
@@ -111,7 +145,7 @@ addParameter(inpPar,'numSpaceColPad',1,...
    @(x) validateattributes(x,{'numeric','logical'},...
         {'nonempty','integer','positive'}))
 addParameter(inpPar,'printLatexFull',true,@islogical);
-addParameter(inpPar,'printBorder',true,...
+addParameter(inpPar,'printBorder',0,...
    @(x) validateattributes(x,{'numeric','logical'},...
         {'nonempty','scalar','binary'}))
 addParameter(inpPar,'borderRowStr','-',@ischar);
@@ -353,6 +387,29 @@ else
    fprintf(1,tableStr);
 end
 
+function repData = repmat_as_needed(dataPart, repDataSize)
+%% REPMAT_AS_NEEDED Repeat data in dataPart to match repDataSize if possible
+% Syntax:
+%     repData = REPMAT_AS_NEEDED(dataPart, repDataSize)
+%     
+% Comment:
+%     Repeats data up repDataSize unless it is already of the correct size.
+
+%   Created by: Johan Winges
+%   $Revision: 1.0$  $Date: 2014/10/07 9:00:00$
+
+% Check size difference between dataPart and repDataSize, repeat up to size:
+dataSize    = size(dataPart);
+dataSizeExt = ones(1,length(repDataSize));
+dataSizeExt(1:length(dataSize)) = dataSize;
+numRepDim   = repDataSize./dataSizeExt;
+if all( (abs(round(numRepDim)-numRepDim)) <= eps('double') )
+   repData     = repmat(dataPart, round(numRepDim));
+else
+   error('repmat_as_needed:invalidInput',...
+      'The supplied dataPart and repDataSize have incompatible sizes')
+end
+
 function str = rmexpzeros(str, printMode)
 %% RMEXPZEROS Remove extra zeroes after exponent string (i.e. 1.1e+01 remove 0)
 %
@@ -407,5 +464,45 @@ elseif strcmp(printMode,'latex')
             '{\\times}10^{-' str(endIndex+1:end) '}$'];
       end
    end
-   
 end
+
+function str = cellstr2str(cellstr, separationStr, numericConversionStr)
+%% CELLSTR2STR Convert a cellstring to a single string with a separation string
+%
+% Syntax:
+%     str = cellstr2str(cellstr, separationStr)
+%     str = cellstr2str(numericArray, separationStr, numericConversionStr)
+%
+% Comment:
+%     Utility function for writing a cellstr as a single string.
+%     Can also convert a numeric array to a string.
+%     Main purpose is add separation charachter between the parts of the
+%     cellstr.
+
+%   Created by: Johan Winges
+%   $Revision: 1.0$  $Date: 2012/?/? 00:00:00$
+%   $Revision: 2.0$  $Date: 2014/10/06 13:00:00$
+%     Complete overhaul of function
+
+% Default separationStr
+if (nargin <= 1)
+   separationStr = ' ';
+end
+% Default numericConversionStr
+if nargin <= 2
+   numericConversionStr = '%g';
+end
+
+% Numeric input array:
+if ~iscell(cellstr)
+   % Convert numeric array to cellstr:
+   cellstr = cellfun(@(innum) num2str(innum, numericConversionStr),...
+      num2cell(cellstr),'un',0);
+end
+
+% Concatenate into output:
+cellstr        = cellstr(:).';
+len_cs         = length(cellstr);
+cellsty        = cat(2, repmat( { separationStr }, [1, len_cs-1]), {''});
+cellstr_merge  = cat(1, cellstr, cellsty );
+str            = cat(2, cellstr_merge{:} ) ;
